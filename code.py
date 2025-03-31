@@ -1,37 +1,40 @@
+# Created by: Clara T
+# Created on: Mar 2025
+# This program uses sonar
+
+
 import time
-import RPi.GPIO as GPIO
-
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(trigPin, GPIO.OUT)
-GPIO.setup(echoPin, GPIO.IN)
-led = digitalio.DigitalInOut(board.GP5)
+import board
+import adafruit_hcsr04
+import digitalio
 
 
-try:
-    while True:
-        GPIO.output(trigPin, GPIO.LOW)
-        time.sleep(0.5)
-        GPIO.output(trigPin, GPIO.HIGH)
-        time.sleep(0.5)
-        GPIO.output(trigPin, GPIO.LOW)
+# variables
+seconds_to_microseconds_conversion_number = 1000000
+sonar_delays = [2 / seconds_to_microseconds_conversion_number, 10 / seconds_to_microseconds_conversion_number]
+delay_between_sonar_cheeks = 10
+distance = 0
+too_close = 20
 
-        start_time = time.time()
-        while GPIO.input(echoPin) == 0:
-            start_time = time.time()
+# setup
+led = digitalio.DigitalInOut(board.GP12)
+led.direction = digitalio.Direction.OUTPUT
+sonar = adafruit_hcsr04.HCSR04(trigger_pin = board.GP15, echo_pin = board.GP14)
 
-        while GPIO.input(echoPin) == 1:
-            stop_time = time.time()
+# loop
+while True:
+    # Sonar gets the distance form object
+    time.sleep(sonar_delays[0])
+    distance = sonar.distance
+    time.sleep(sonar_delays[1])
 
-        duration = stop_time - start_time
-        distance = (duration * 34300) / 2
+    print(f"Distance: {distance} cm")
 
-        if distance < 10:
-            GPIO.output(led, GPIO.HIGH)
-        else:
-            GPIO.output(led, GPIO.LOW)
+    # Turns on LED if an object’s distance is equal to or closer then 20 cm from the sonar
+    if distance <= too_close:
+        led.value = True
+    else:
+        led.value = False
 
-        print(distance, "cm")
-        time.sleep(1)
-
-except KeyboardInterrupt:
-    GPIO.cleanup()
+    # The commented out code is not part of the actual code but is needed to get it working by uncommenting it and then recommenting it
+    #time.sleep(delay_between_sonar_cheeks)
